@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Klaro — pergunta, a gente explica</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;500;600;700&display=swap');
+
+  :root {
+    --bg: #F2F3F7;
+    --paper: #FFFFFF;
+    --ink: #1C1B29;
+    --ink-soft: #55536B;
+    --violet: #5B4FE0;
+    --violet-deep: #3D33A8;
+    --coral: #FF5C8A;
+    --coral-deep: #B8264F;
+    --mint: #23C1A0;
+    --mint-deep: #0E7A63;
+    --line: #E1E1EA;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+
+  .brand {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+
+  .brand h1 {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 40px;
+    margin: 0;
+    color: var(--ink);
+    letter-spacing: -0.5px;
+  }
+
+  .brand .dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--coral);
+    margin-bottom: 10px;
+  }
+
+  .tagline {
+    color: var(--ink-soft);
+    font-size: 16px;
+    margin: 0 0 32px;
+    max-width: 480px;
+    line-height: 1.5;
+  }
+
+  .search-box {
+    background: var(--paper);
+    border: 2px solid var(--ink);
+    border-radius: 18px;
+    padding: 6px 6px 6px 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 5px 5px 0 var(--ink);
+    margin-bottom: 16px;
+  }
+
+  .search-box input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+    padding: 12px 0;
+    color: var(--ink);
+  }
+
+  .search-box input::placeholder {
+    color: #A5A3B8;
+  }
+
+  .search-box button {
+    background: var(--violet);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 20px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: transform 0.1s ease, background 0.15s ease;
+  }
+
+  .search-box button:hover { background: var(--violet-deep); }
+  .search-box button:active { transform: scale(0.96); }
+  .search-box button:disabled { background: #B9B6E8; cursor: default; }
+
+  .mode-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 36px;
+    flex-wrap: wrap;
+  }
+
+  .mode-chip {
+    border: 1.5px solid var(--line);
+    background: var(--paper);
+    border-radius: 999px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .mode-chip.active {
+    border-color: var(--violet);
+    background: #EDEBFC;
+    color: var(--violet-deep);
+  }
+
+  .examples {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .examples span {
+    font-size: 13px;
+    color: var(--ink-soft);
+    padding: 6px 0;
+  }
+
+  .example-btn {
+    font-size: 13px;
+    color: var(--mint-deep);
+    background: #E4F7F2;
+    border: none;
+    border-radius: 8px;
+    padding: 6px 10px;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+  }
+
+  #result-area { margin-top: 8px; }
+
+  .loading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--ink-soft);
+    font-size: 14px;
+    padding: 20px 0;
+  }
+
+  .spinner {
+    width: 18px;
+    height: 18px;
+    border: 3px solid var(--line);
+    border-top-color: var(--violet);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .answer-card {
+    background: var(--paper);
+    border-radius: 18px;
+    border: 1.5px solid var(--line);
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+
+  .answer-card .q {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--violet-deep);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin: 0 0 12px;
+  }
+
+  .answer-card .a {
+    font-size: 16px;
+    line-height: 1.65;
+    color: var(--ink);
+    white-space: pre-wrap;
+  }
+
+  .answer-card .a strong { font-weight: 700; }
+
+  .sources {
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
+  }
+
+  .sources p {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin: 0 0 8px;
+  }
+
+  .source-chip {
+    display: inline-block;
+    font-size: 12px;
+    color: var(--mint-deep);
+    background: #E4F7F2;
+    border-radius: 8px;
+    padding: 5px 10px;
+    margin: 0 6px 6px 0;
+    text-decoration: none;
+  }
+
+  .error-box {
+    background: #FDECEF;
+    border: 1.5px solid var(--coral);
+    color: var(--coral-deep);
+    border-radius: 14px;
+    padding: 16px 20px;
+    font-size: 14px;
+  }
+
+  .footer-note {
+    text-align: center;
+    font-size: 12px;
+    color: #A5A3B8;
+    margin-top: 40px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="brand">
+    <h1>Klaro</h1>
+    <div class="dot"></div>
+  </div>
+  <p class="tagline">Pergunta qualquer coisa — de dever de casa a curiosidade aleatória. A resposta vem direto, sem enrolação.</p>
+
+  <div class="search-box">
+    <input type="text" id="query" placeholder="tipo: por que o céu é azul" maxlength="300" />
+    <button id="ask-btn" onclick="ask()">Perguntar</button>
+  </div>
+
+  <div class="mode-row">
+    <div class="mode-chip active" data-mode="direct" onclick="setMode('direct')">Resposta rápida</div>
+    <div class="mode-chip" data-mode="lesson" onclick="setMode('lesson')">Me ajuda a entender</div>
+  </div>
+
+  <div class="examples">
+    <span>tenta:</span>
+    <button class="example-btn" onclick="fillExample('como resolver equação de segundo grau')">equação de 2º grau</button>
+    <button class="example-btn" onclick="fillExample('por que a gente boceja quando vê alguém bocejando')">bocejo contagioso</button>
+    <button class="example-btn" onclick="fillExample('resumo rápido da revolução francesa')">revolução francesa</button>
+  </div>
+
+  <div id="result-area"></div>
+
+  <p class="footer-note">Protótipo — as respostas usam IA, sempre confira antes de colar no trabalho.</p>
+</div>
+
+<script>
+let currentMode = 'direct';
+let isLoading = false;
+
+function setMode(mode) {
+  currentMode = mode;
+  document.querySelectorAll('.mode-chip').forEach(el => {
+    el.classList.toggle('active', el.dataset.mode === mode);
+  });
+}
+
+function fillExample(text) {
+  document.getElementById('query').value = text;
+  ask();
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function renderAnswer(text) {
+  return escapeHtml(text)
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n/g, '<br>');
+}
+
+async function ask() {
+  const input = document.getElementById('query');
+  const question = input.value.trim();
+  const resultArea = document.getElementById('result-area');
+  const btn = document.getElementById('ask-btn');
+
+  if (!question || isLoading) return;
+
+  isLoading = true;
+  btn.disabled = true;
+  btn.textContent = 'Pensando...';
+
+  resultArea.innerHTML = `
+    <div class="loading">
+      <div class="spinner"></div>
+      <span>Buscando e organizando a resposta...</span>
+    </div>
+  `;
+
+  try {
+    const response = await fetch("/api/ask", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question, mode: currentMode })
+    });
+
+    if (!response.ok) throw new Error("Falha na resposta da API");
+
+    const data = await response.json();
+
+    let answerText = data.answer || "";
+    let sources = data.sources || [];
+
+    if (!answerText) answerText = "Não consegui montar uma resposta boa pra isso. Tenta reformular a pergunta?";
+
+    let sourcesHtml = "";
+    if (sources.length > 0) {
+      sourcesHtml = `
+        <div class="sources">
+          <p>Fontes</p>
+          ${sources.slice(0, 4).map(s => `<a class="source-chip" href="${escapeHtml(s.url)}" target="_blank" rel="noopener">${escapeHtml(s.title.slice(0, 40))}</a>`).join('')}
+        </div>
+      `;
+    }
+
+    resultArea.innerHTML = `
+      <div class="answer-card">
+        <p class="q">${escapeHtml(question)}</p>
+        <div class="a">${renderAnswer(answerText)}</div>
+        ${sourcesHtml}
+      </div>
+    `;
+  } catch (err) {
+    resultArea.innerHTML = `
+      <div class="error-box">
+        Deu ruim pra buscar essa resposta agora. Tenta de novo em alguns segundos.
+      </div>
+    `;
+  } finally {
+    isLoading = false;
+    btn.disabled = false;
+    btn.textContent = 'Perguntar';
+  }
+}
+
+document.getElementById('query').addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') ask();
+});
+</script>
+</body>
+</html>
