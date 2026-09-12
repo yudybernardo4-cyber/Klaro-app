@@ -33,7 +33,7 @@ export default async function handler(req, res) {
         'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: 'llama-3.1-8b-instant', 
         max_tokens: 1000,
         messages: [
           { role: 'system', content: systemPrompt },
@@ -44,7 +44,7 @@ export default async function handler(req, res) {
 
     if (!response.ok) {
       const errText = await response.text();
-      console.error('Erro da API Groq:', errText);
+      console.error('Erro da API Guroq:', errText);
       return res.status(502).json({ error: 'Erro ao consultar a IA' });
     }
 
