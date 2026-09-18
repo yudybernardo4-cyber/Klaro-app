@@ -46,22 +46,6 @@
 
   .brand h1 {
     font-family: 'Archivo Black', sans-serif;
-    font-size: 40px;
-    margin: 0;
-    color: var(--ink);
-    letter-spacing: -0.5px;
-  }
-
-  .brand .dot {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: var(--coral);
-    margin-bottom: 10px;
-  }
-
-  .tagline {
-    color: var(--ink-soft);
     font-size: 16px;
     margin: 0 0 32px;
     max-width: 480px;
@@ -252,6 +236,122 @@
     color: #A5A3B8;
     margin-top: 40px;
   }
+
+  .status-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: var(--paper);
+    border: 1.5px solid var(--line);
+    border-radius: 14px;
+    padding: 12px 18px;
+    margin-bottom: 24px;
+    font-size: 13px;
+    color: var(--ink-soft);
+    flex-wrap: wrap;
+  }
+
+  .status-bar.premium {
+    border-color: var(--mint);
+    background: #E4F7F2;
+    color: var(--mint-deep);
+    font-weight: 600;
+  }
+
+  .status-bar .code-link {
+    background: none;
+    border: none;
+    color: var(--violet);
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 0;
+    text-decoration: underline;
+  }
+
+  .paywall-card {
+    background: var(--paper);
+    border-radius: 18px;
+    border: 1.5px solid var(--violet);
+    padding: 28px 24px;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+
+  .paywall-card h3 {
+    margin: 0 0 8px;
+    font-size: 19px;
+    color: var(--ink);
+  }
+
+  .paywall-card p {
+    margin: 0 0 20px;
+    color: var(--ink-soft);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .paywall-card .subscribe-btn {
+    display: inline-block;
+    background: var(--violet);
+    color: white;
+    font-weight: 700;
+    font-size: 15px;
+    padding: 14px 28px;
+    border-radius: 12px;
+    text-decoration: none;
+    margin-bottom: 14px;
+  }
+
+  .paywall-card .code-toggle {
+    display: block;
+    background: none;
+    border: none;
+    color: var(--ink-soft);
+    font-size: 13px;
+    text-decoration: underline;
+    cursor: pointer;
+    margin: 0 auto;
+  }
+
+  .code-form {
+    display: none;
+    margin-top: 18px;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .code-form.open { display: flex; }
+
+  .code-form input {
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 14px;
+    font-family: 'Inter', sans-serif;
+    width: 200px;
+  }
+
+  .code-form button {
+    background: var(--ink);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 18px;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  .code-msg {
+    font-size: 13px;
+    margin-top: 10px;
+  }
+
+  .code-msg.error { color: var(--coral-deep); }
+  .code-msg.success { color: var(--mint-deep); }
 </style>
 </head>
 <body>
@@ -262,6 +362,8 @@
     <div class="dot"></div>
   </div>
   <p class="tagline">Pergunta qualquer coisa — de dever de casa a curiosidade aleatória. A resposta vem direto, sem enrolação.</p>
+
+  <div class="status-bar" id="status-bar"></div>
 
   <div class="search-box">
     <input type="text" id="query" placeholder="tipo: por que o céu é azul" maxlength="300" />
@@ -289,6 +391,89 @@
 let currentMode = 'direct';
 let isLoading = false;
 
+const FREE_LIMIT = 5;
+const ACCESS_CODE = 'KLAROVIP2026';
+const CHECKOUT_URL = 'https://klaro-app-cyan.vercel.app'; // TODO: trocar pelo link real da EscalePay quando aprovado
+
+function todayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+}
+
+function isPremium() {
+  return localStorage.getItem('klaro_premium') === 'unlocked';
+}
+
+function getUsage() {
+  const savedDate = localStorage.getItem('klaro_usage_date');
+  if (savedDate !== todayKey()) {
+    localStorage.setItem('klaro_usage_date', todayKey());
+    localStorage.setItem('klaro_usage_count', '0');
+    return 0;
+  }
+  return parseInt(localStorage.getItem('klaro_usage_count') || '0', 10);
+}
+
+function incrementUsage() {
+  const count = getUsage() + 1;
+  localStorage.setItem('klaro_usage_count', String(count));
+  renderStatusBar();
+}
+
+function renderStatusBar() {
+  const bar = document.getElementById('status-bar');
+  if (isPremium()) {
+    bar.className = 'status-bar premium';
+    bar.innerHTML = '✓ Klaro Premium ativo — perguntas ilimitadas';
+    return;
+  }
+  const used = getUsage();
+  const left = Math.max(0, FREE_LIMIT - used);
+  bar.className = 'status-bar';
+  bar.innerHTML = `
+    <span>${left} de ${FREE_LIMIT} perguntas grátis hoje</span>
+    <button class="code-link" onclick="toggleCodeForm()">Já é assinante?</button>
+  `;
+}
+
+function toggleCodeForm() {
+  showPaywall();
+  const form = document.getElementById('inline-code-form');
+  if (form) form.classList.add('open');
+}
+
+function tryUnlock(inputId, msgId) {
+  const val = document.getElementById(inputId).value.trim().toUpperCase();
+  const msg = document.getElementById(msgId);
+  if (val === ACCESS_CODE) {
+    localStorage.setItem('klaro_premium', 'unlocked');
+    msg.textContent = 'Código válido! Premium ativado.';
+    msg.className = 'code-msg success';
+    renderStatusBar();
+    setTimeout(() => { document.getElementById('result-area').innerHTML = ''; }, 900);
+  } else {
+    msg.textContent = 'Código inválido. Confere se digitou certinho.';
+    msg.className = 'code-msg error';
+  }
+}
+
+function showPaywall() {
+  const resultArea = document.getElementById('result-area');
+  resultArea.innerHTML = `
+    <div class="paywall-card">
+      <h3>Suas perguntas grátis de hoje acabaram</h3>
+      <p>Assina o Klaro Premium por 50 MT/mês e pergunta o quanto quiser, sem limite.</p>
+      <a class="subscribe-btn" href="${CHECKOUT_URL}" target="_blank" rel="noopener">Assinar Klaro Premium</a>
+      <button class="code-toggle" onclick="document.getElementById('inline-code-form').classList.toggle('open')">Já assinei — inserir código de acesso</button>
+      <div class="code-form" id="inline-code-form">
+        <input type="text" id="code-input" placeholder="Seu código de acesso" maxlength="40" />
+        <button onclick="tryUnlock('code-input','code-msg')">Ativar</button>
+      </div>
+      <div class="code-msg" id="code-msg"></div>
+    </div>
+  `;
+}
+
 function setMode(mode) {
   currentMode = mode;
   document.querySelectorAll('.mode-chip').forEach(el => {
@@ -307,8 +492,19 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
+function cleanMathNotation(text) {
+  return text
+    .replace(/\\\(|\\\)|\\\[|\\\]/g, '')
+    .replace(/\\frac\{([^{}]+)\}\{([^{}]+)\}/g, '($1)/($2)')
+    .replace(/\\sqrt\{([^{}]+)\}/g, '√($1)')
+    .replace(/\\pm/g, '±')
+    .replace(/\\times/g, '×')
+    .replace(/\\div/g, '÷')
+    .replace(/\\cdot/g, '·');
+}
+
 function renderAnswer(text) {
-  return escapeHtml(text)
+  return escapeHtml(cleanMathNotation(text))
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/\n/g, '<br>');
 }
@@ -320,6 +516,11 @@ async function ask() {
   const btn = document.getElementById('ask-btn');
 
   if (!question || isLoading) return;
+
+  if (!isPremium() && getUsage() >= FREE_LIMIT) {
+    showPaywall();
+    return;
+  }
 
   isLoading = true;
   btn.disabled = true;
@@ -365,6 +566,8 @@ async function ask() {
         ${sourcesHtml}
       </div>
     `;
+
+    if (!isPremium()) incrementUsage();
   } catch (err) {
     resultArea.innerHTML = `
       <div class="error-box">
@@ -381,7 +584,8 @@ async function ask() {
 document.getElementById('query').addEventListener('keypress', function(e) {
   if (e.key === 'Enter') ask();
 });
+
+renderStatusBar();
 </script>
 </body>
 </html>
- 
